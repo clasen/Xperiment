@@ -517,7 +517,7 @@ config/
     cases: ['variant_a', 'variant_b'] or { variant_a: 50, variant_b: 50 }
 
 experiments/
-{experimentName}/
+  {experimentName}/
     {userId}/
       case: 'variant_a'
       hits: 25
