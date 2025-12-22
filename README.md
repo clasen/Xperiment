@@ -45,8 +45,8 @@ import Xperiment from 'xperiment';
 
 // Create experiment directly with cases
 const exp = new Xperiment('user123', {
-  cases: ['variant_a', 'variant_b']
-  // name is optional, defaults to 'default'
+    cases: ['variant_a', 'variant_b']
+    // name is optional, defaults to 'default'
 });
 
 // Get assigned variant
@@ -141,19 +141,19 @@ new Xperiment(id, options)
 ```javascript
 // Simple: just cases (uses 'default' name)
 const exp1 = new Xperiment('user456', {
-  cases: ['red', 'blue']
+    cases: ['red', 'blue']
 });
 
 // With custom name and weights
 const exp2 = new Xperiment('user456', {
-  name: 'button-color-test',
-  cases: { red: 30, blue: 70 }
+    name: 'button-color-test',
+    cases: { red: 30, blue: 70 }
 });
 
 // Array with equal probability
 const exp3 = new Xperiment('user456', {
-  name: 'headline-test',
-  cases: ['a', 'b', 'c', 'd']  // 25% each
+    name: 'headline-test',
+    cases: ['a', 'b', 'c', 'd']  // 25% each
 });
 ```
 
@@ -186,8 +186,8 @@ const exp2 = await Xperiment.get('user123', 'quick-test', ['a', 'b']);
 
 // With options object
 const exp3 = await Xperiment.get('user123', {
-  name: 'flex-test',
-  cases: ['x', 'y', 'z']
+    name: 'flex-test',
+    cases: ['x', 'y', 'z']
 });
 
 // Default experiment (no name needed)
@@ -314,26 +314,26 @@ await Xperiment.report(name = 'default')
 
 ```javascript
 {
-  experiment: 'experiment-name',
-  totalUsers: 100,
-  cases: {
-    'variant_a': {
-      users: 50,
-      totalHits: 300,
-      totalMisses: 100,
-      netScore: 200,
-      successRate: 0.75
+    experiment: 'experiment-name',
+    totalUsers: 100,
+    cases: {
+        'variant_a': {
+            users: 50,
+            totalHits: 300,
+            totalMisses: 100,
+            netScore: 200,
+            successRate: 0.75
+        },
+        'variant_b': {
+            users: 50,
+            totalHits: 250,
+            totalMisses: 150,
+            netScore: 100,
+            successRate: 0.625
+        }
     },
-    'variant_b': {
-      users: 50,
-      totalHits: 250,
-      totalMisses: 150,
-      netScore: 100,
-      successRate: 0.625
-    }
-  },
-  bestCase: 'variant_a',
-  effectiveness: 100
+    bestCase: 'variant_a',
+    effectiveness: 100
 }
 ```
 
@@ -355,23 +355,23 @@ import Xperiment from 'xperiment';
 
 // No need to define or name - just use it!
 const exp = new Xperiment('user_alice', {
-  cases: ['old_checkout', 'new_checkout']
+    cases: ['old_checkout', 'new_checkout']
 });
 
 const variant = await exp.case();
 
 // Show appropriate UI
 if (variant === 'new_checkout') {
-  showNewCheckout();
+    showNewCheckout();
 } else {
-  showOldCheckout();
+    showOldCheckout();
 }
 
 // Track conversion
 if (userCompletesPurchase()) {
-  await exp.hit();
+    await exp.hit();
 } else {
-  await exp.miss();
+    await exp.miss();
 }
 ```
 
@@ -384,24 +384,24 @@ import Xperiment from 'xperiment';
 await Xperiment.define(['old_checkout', 'new_checkout'], 'checkout-flow');
 
 async function testUserJourney(userId) {
-  // Get experiment instance for user (loads from DB)
-  const exp = await Xperiment.get(userId, 'checkout-flow');
-  
-  const variant = await exp.case();
-  
-  // Show appropriate UI based on variant
-  if (variant === 'new_checkout') {
-    showNewCheckout();
-  } else {
-    showOldCheckout();
-  }
-  
-  // Track conversion
-  if (userCompletesPurchase()) {
-    await exp.hit();
-  } else {
-    await exp.miss();
-  }
+    // Get experiment instance for user (loads from DB)
+    const exp = await Xperiment.get(userId, 'checkout-flow');
+    
+    const variant = await exp.case();
+    
+    // Show appropriate UI based on variant
+    if (variant === 'new_checkout') {
+        showNewCheckout();
+    } else {
+        showOldCheckout();
+    }
+    
+    // Track conversion
+    if (userCompletesPurchase()) {
+        await exp.hit();
+    } else {
+        await exp.miss();
+    }
 }
 ```
 
@@ -420,10 +420,10 @@ const variant = await exp.case();
 ```javascript
 // Define with array for equal probability (25% each)
 await Xperiment.define([
-  'headline_a', 
-  'headline_b', 
-  'headline_c', 
-  'headline_d'
+    'headline_a', 
+    'headline_b', 
+    'headline_c', 
+    'headline_d'
 ], 'landing-page-headline');
 
 const exp = await Xperiment.get('user999', 'landing-page-headline');
@@ -434,22 +434,22 @@ const headline = await exp.case();
 
 ```javascript
 async function showDashboard() {
-  const experiments = ['homepage-test', 'checkout-flow', 'pricing-test'];
-  
-  for (const name of experiments) {
-    const report = await Xperiment.report(name);
+    const experiments = ['homepage-test', 'checkout-flow', 'pricing-test'];
     
-    console.log(`\n=== ${report.experiment} ===`);
-    console.log(`Total Users: ${report.totalUsers}`);
-    console.log(`Best Case: ${report.bestCase}`);
-    
-    for (const [caseName, stats] of Object.entries(report.cases)) {
-      console.log(`\n${caseName}:`);
-      console.log(`  Users: ${stats.users}`);
-      console.log(`  Success Rate: ${(stats.successRate * 100).toFixed(2)}%`);
-      console.log(`  Net Score: ${stats.netScore}`);
+    for (const name of experiments) {
+        const report = await Xperiment.report(name);
+        
+        console.log(`\n=== ${report.experiment} ===`);
+        console.log(`Total Users: ${report.totalUsers}`);
+        console.log(`Best Case: ${report.bestCase}`);
+        
+        for (const [caseName, stats] of Object.entries(report.cases)) {
+            console.log(`\n${caseName}:`);
+            console.log(`  Users: ${stats.users}`);
+            console.log(`  Success Rate: ${(stats.successRate * 100).toFixed(2)}%`);
+            console.log(`  Net Score: ${stats.netScore}`);
+        }
     }
-  }
 }
 ```
 
@@ -463,16 +463,16 @@ const layout = await exp.case();
 
 // Track different levels of engagement
 if (userClicksButton()) {
-  await exp.hit(1);
+    await exp.hit(1);
 }
 if (userSharesContent()) {
-  await exp.hit(5);
+    await exp.hit(5);
 }
 if (userMakesPurchase()) {
-  await exp.hit(10);
+    await exp.hit(10);
 }
 if (userBounces()) {
-  await exp.miss(1);
+    await exp.miss(1);
 }
 ```
 
@@ -517,7 +517,7 @@ config/
     cases: ['variant_a', 'variant_b'] or { variant_a: 50, variant_b: 50 }
 
 experiments/
-  {experimentName}/
+{experimentName}/
     {userId}/
       case: 'variant_a'
       hits: 25
