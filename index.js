@@ -48,10 +48,6 @@ class Xperiment {
     }
   }
 
-  /**
-   * Internal method to set cases from array or object
-   * @private
-   */
   _setCases(cases) {
     // Convert array to object with equal probabilities
     if (Array.isArray(cases)) {
@@ -138,11 +134,6 @@ class Xperiment {
     return assignedCase;
   }
 
-  /**
-   * Select a random case based on configured probabilities
-   * @private
-   * @returns {string} Selected case
-   */
   _selectRandomCase() {
     const options = this.caseNames;
     
