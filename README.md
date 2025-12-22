@@ -15,12 +15,12 @@
 ## Installation
 
 ```bash
-npm install xperiment deepbase
+npm install xperiment
 ```
 
 ## Demo Examples
 
-Check out the [demo folder](./demo) for complete, runnable examples:
+Check out the [demo folder](https://github.com/clasen/Xperiment/tree/main/demo) for complete, runnable examples:
 
 - **basic.js** - Simple A/B test with two variants
 - **multivariant.js** - Testing 4 variants simultaneously (A/B/C/D)
@@ -35,8 +35,6 @@ node demo/basic.js
 node demo/score-usage.js
 node demo/dashboard.js
 ```
-
-See [demo/README.md](./demo/README.md) for detailed information about each example.
 
 ## Quick Start
 

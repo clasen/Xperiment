@@ -1,8 +1,16 @@
 {
   "name": "xperiment",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "🧪 Xperiment - A/B testing, simplified",
-  "main": "index.js",
+  "type": "module",
+  "main": "index.cjs",
+  "module": "index.js",
+  "exports": {
+    ".": {
+      "require": "./index.cjs",
+      "import": "./index.js"
+    }
+  },
   "scripts": {
     "test": "mocha test.js"
   },
@@ -29,7 +37,6 @@
   ],
   "author": "Martin Clasen",
   "license": "MIT",
-  "type": "module",
   "dependencies": {
     "deepbase": "^3.2.0"
   },
