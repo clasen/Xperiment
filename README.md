@@ -11,6 +11,7 @@
 - 📊 **Built-in Analytics** - Track hits/misses and generate effectiveness reports
 - 🔄 **Singleton Pattern** - Ensures consistent user experience
 - ⚡ **Async/Await** - Modern JavaScript API
+- 🎖️ **Auto-Convergence** - Automatically switch to winning variant after statistical confidence
 
 ## Installation
 
@@ -28,12 +29,14 @@ Check out the [demo folder](https://github.com/clasen/Xperiment/tree/main/demo) 
 - **score-usage.js** - Using score() for engagement time tracking
 - **dashboard.js** - Monitoring multiple experiments with a visual dashboard
 - **complete-flow.js** - Multi-stage funnel testing for e-commerce
+- **convergence-mode.js** - Auto-convergence to winning variant
 
 Run any example:
 ```bash
 node demo/basic.js
 node demo/score-usage.js
 node demo/dashboard.js
+node demo/convergence-mode.js
 ```
 
 ## Quick Start
@@ -100,7 +103,7 @@ const variant = await exp.case();
 Define an experiment with its cases. Configuration is persisted in the database.
 
 ```javascript
-await Xperiment.define(cases, name = 'default')
+await Xperiment.define(cases, name = 'default', options = {})
 ```
 
 **Parameters:**
@@ -108,6 +111,8 @@ await Xperiment.define(cases, name = 'default')
   - Array: `['option1', 'option2']` - Equal probability (1/n each)
   - Object: `{option1: 30, option2: 70}` - Custom weights
 - `name` (string) - Experiment name (optional, defaults to `'default'`)
+- `options` (object) - Additional options (optional)
+  - `convergenceThreshold` (number) - Effectiveness % (0-100) to auto-select winner
 
 **Example:**
 
@@ -120,6 +125,11 @@ await Xperiment.define({ red: 30, blue: 70 }, 'button-test');
 
 // Using default name (no need to specify)
 await Xperiment.define(['option_a', 'option_b']);
+
+// With convergence threshold (auto-select winner at 80% effectiveness)
+await Xperiment.define(['control', 'variant'], 'auto-optimize-test', {
+  convergenceThreshold: 80
+});
 ```
 
 ### Constructor
@@ -135,6 +145,7 @@ new Xperiment(id, options)
 - `options` (object) - Configuration options
   - `name` (string) - Experiment name (default: `'default'`)
   - `cases` (Array|Object) - Case definitions (optional if loading from DB)
+  - `convergenceThreshold` (number) - Effectiveness % (0-100) to auto-select winner
 
 **Examples:**
 
@@ -155,6 +166,13 @@ const exp3 = new Xperiment('user456', {
     name: 'headline-test',
     cases: ['a', 'b', 'c', 'd']  // 25% each
 });
+
+// With convergence threshold
+const exp4 = new Xperiment('user456', {
+    name: 'auto-test',
+    cases: ['control', 'variant'],
+    convergenceThreshold: 85  // Auto-select winner at 85% effectiveness
+});
 ```
 
 ### Static Method: get()
@@ -169,7 +187,7 @@ await Xperiment.get(id, nameOrOptions = 'default', cases = null)
 - `id` (string) - Unique user identifier
 - `nameOrOptions` (string|Object) - Experiment name or options object
   - As string: `'experiment-name'`
-  - As object: `{ name: 'experiment-name', cases: [...] }`
+  - As object: `{ name: 'experiment-name', cases: [...], convergenceThreshold: 80 }`
 - `cases` (Array|Object) - Optional: cases to define if experiment doesn't exist
 
 **Returns:** Promise<Xperiment> - Experiment instance
@@ -192,6 +210,12 @@ const exp3 = await Xperiment.get('user123', {
 
 // Default experiment (no name needed)
 const exp4 = await Xperiment.get('user123'); // uses 'default' name
+
+// With convergence threshold
+const exp5 = await Xperiment.get('user123', {
+    name: 'auto-test',
+    convergenceThreshold: 75
+});
 ```
 
 ### Instance Method: case()
@@ -333,7 +357,9 @@ await Xperiment.report(name = 'default')
         }
     },
     bestCase: 'variant_a',
-    effectiveness: 100
+    effectiveness: 100,
+    convergenceThreshold: 80,  // null if not set
+    converged: true            // true if effectiveness >= convergenceThreshold
 }
 ```
 
@@ -344,7 +370,98 @@ const report = await Xperiment.report('homepage-test');
 console.log(`Total users tested: ${report.totalUsers}`);
 console.log(`Winner: ${report.bestCase}`);
 console.log(`Success rate: ${report.cases[report.bestCase].successRate * 100}%`);
+console.log(`Converged: ${report.converged}`);
 ```
+
+## Convergence Mode
+
+Convergence mode allows your experiment to automatically switch from testing mode to optimization mode once you reach a certain level of statistical confidence (effectiveness).
+
+### How It Works
+
+1. **During testing phase**: Users are randomly assigned to variants based on configured probabilities
+2. **After threshold reached**: When effectiveness reaches your configured threshold (e.g., 80%), new users automatically receive the winning variant
+3. **Continuous optimization**: The experiment seamlessly transitions from exploration to exploitation
+
+### Configuration
+
+Set the `convergenceThreshold` parameter (0-100) representing the effectiveness percentage at which to auto-select the winner:
+
+```javascript
+// Define with convergence threshold
+await Xperiment.define(['control', 'variant'], 'my-experiment', {
+  convergenceThreshold: 80  // Switch to winner at 80% effectiveness
+});
+
+// Get with convergence threshold
+const exp = await Xperiment.get('user123', {
+  name: 'my-experiment',
+  convergenceThreshold: 80
+});
+
+// Constructor with convergence threshold
+const exp = new Xperiment('user123', {
+  name: 'my-experiment',
+  cases: ['control', 'variant'],
+  convergenceThreshold: 80
+});
+```
+
+### Example
+
+```javascript
+// Define experiment with 75% convergence threshold
+await Xperiment.define(['old_design', 'new_design'], 'homepage-redesign', {
+  convergenceThreshold: 75
+});
+
+// As users interact, track outcomes
+for (let i = 0; i < 100; i++) {
+  const exp = await Xperiment.get(`user${i}`, 'homepage-redesign');
+  const design = await exp.case();
+  
+  // Track user behavior
+  if (userConverted) {
+    await exp.hit();
+  } else {
+    await exp.miss();
+  }
+}
+
+// Check convergence status
+const report = await Xperiment.report('homepage-redesign');
+console.log(`Effectiveness: ${report.effectiveness}%`);
+console.log(`Converged: ${report.converged}`);
+console.log(`Best variant: ${report.bestCase}`);
+
+// New users after convergence automatically get the winner
+const newExp = await Xperiment.get('new_user', 'homepage-redesign');
+const variant = await newExp.case();
+// If converged, variant will always be the winning case
+```
+
+### Understanding Effectiveness
+
+Effectiveness is calculated based on the minimum number of events across all variants:
+- **0%**: No data collected yet
+- **50%**: Half the recommended events (15 out of 30 per variant)
+- **100%**: Recommended events or more (30+ events per variant)
+
+The recommended number of events is `30` per variant (exported as `RECOMMENDED_EVENTS`).
+
+### When to Use Convergence
+
+- **Gradual rollouts**: Start with A/B testing, automatically roll out winner
+- **Self-optimizing systems**: Let the system automatically optimize based on data
+- **Resource efficiency**: Stop splitting traffic once you have a clear winner
+- **Continuous improvement**: Keep collecting data while serving the best variant
+
+### Notes
+
+- Set `convergenceThreshold: 0` to disable convergence (always test)
+- Omit the parameter entirely for traditional A/B testing (no auto-convergence)
+- Converged experiments still track metrics for existing users
+- The report's `converged` field indicates if threshold has been reached
 
 ## Usage Examples
 
@@ -504,8 +621,10 @@ The library includes comprehensive tests covering:
 1. **Choose meaningful experiment names** - Use descriptive names like `'homepage-hero-test'` instead of `'test1'`
 2. **Track meaningful events** - Use hits for conversions, not just clicks
 3. **Use weighted scoring** - Give more points to important actions (e.g., purchase = 10 points, signup = 5 points)
-4. **Let tests run long enough** - Collect sufficient data before making decisions
+4. **Let tests run long enough** - Collect sufficient data before making decisions (aim for 30+ events per variant)
 5. **Reset carefully** - Resetting an experiment deletes ALL user data for that experiment
+6. **Use convergence wisely** - Set threshold around 70-90% for good balance between confidence and speed
+7. **Monitor convergence** - Check the `converged` field in reports to know when auto-optimization begins
 
 ## Data Structure
 
@@ -515,6 +634,7 @@ DeepBase stores data in the following structure:
 config/
   {experimentName}/
     cases: ['variant_a', 'variant_b'] or { variant_a: 50, variant_b: 50 }
+    convergenceThreshold: 80  (optional)
 
 experiments/
   {experimentName}/

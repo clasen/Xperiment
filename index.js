@@ -7,6 +7,9 @@ const db = new DeepBase({name: 'xperiment'});
  * Simple but powerful A/B testing with persistent storage
  */
 class Xperiment {
+  // Recommended events per variant for statistical confidence
+  static RECOMMENDED_EVENTS = 30;
+  
   // Singleton map to store instances by id:name
   static instances = new Map();
 
@@ -15,14 +18,20 @@ class Xperiment {
    * @static
    * @param {Object|Array} cases - Case probabilities as object {plot1: 50, plot2: 50} or array ['plot1', 'plot2'] for equal distribution
    * @param {string} [name='default'] - Experiment name (optional, defaults to 'default')
+   * @param {Object} [options] - Additional options
+   * @param {number} [options.convergenceThreshold] - Effectiveness % (0-100) to auto-select winner
    * @returns {Promise<void>}
    */
-  static async define(cases, name = 'default') {
+  static async define(cases, name = 'default', options = {}) {
     if (!cases) {
       throw new Error('cases parameter is required');
     }
     
     await db.set('config', name, 'cases', cases);
+    
+    if (options.convergenceThreshold !== undefined) {
+      await db.set('config', name, 'convergenceThreshold', options.convergenceThreshold);
+    }
   }
 
   /**
@@ -31,10 +40,12 @@ class Xperiment {
    * @param {Object} options - Configuration options
    * @param {string} options.name - Experiment name (default: 'default')
    * @param {Object|Array} options.cases - Case probabilities. If not provided, will try to load from DB.
+   * @param {number} options.convergenceThreshold - Effectiveness % (0-100) to auto-select winner
    */
-  constructor(id, { name = 'default', cases } = {}) {
+  constructor(id, { name = 'default', cases, convergenceThreshold } = {}) {
     this.id = id;
     this.name = name;
+    this.convergenceThreshold = convergenceThreshold;
     
     // If cases provided, use them (and optionally save to DB for future use)
     if (cases) {
@@ -78,11 +89,12 @@ class Xperiment {
    */
   static async get(id, nameOrOptions = 'default', cases = null) {
     // Handle flexible parameters: get(id, name, cases) or get(id, {name, cases})
-    let name, casesParam;
+    let name, casesParam, convergenceThreshold;
     
     if (typeof nameOrOptions === 'object') {
       name = nameOrOptions.name || 'default';
       casesParam = nameOrOptions.cases || cases;
+      convergenceThreshold = nameOrOptions.convergenceThreshold;
     } else {
       name = nameOrOptions;
       casesParam = cases;
@@ -93,6 +105,7 @@ class Xperiment {
     if (!Xperiment.instances.has(key)) {
       // Try to load from DB first
       let loadedCases = await db.get('config', name, 'cases');
+      let loadedThreshold = await db.get('config', name, 'convergenceThreshold');
       
       // If not in DB and cases provided, use them
       if (!loadedCases && casesParam) {
@@ -106,7 +119,14 @@ class Xperiment {
         throw new Error(`Experiment "${name}" not found. Use await Xperiment.define(cases, '${name}') first or pass cases parameter.`);
       }
       
-      Xperiment.instances.set(key, new Xperiment(id, { name, cases: loadedCases }));
+      // Use provided threshold or loaded threshold
+      const finalThreshold = convergenceThreshold !== undefined ? convergenceThreshold : loadedThreshold;
+      
+      Xperiment.instances.set(key, new Xperiment(id, { 
+        name, 
+        cases: loadedCases,
+        convergenceThreshold: finalThreshold
+      }));
     }
     
     return Xperiment.instances.get(key);
@@ -115,6 +135,7 @@ class Xperiment {
   /**
    * Assign a case to the user (or return existing one)
    * Uses the cases defined in the constructor
+   * If convergenceThreshold is set and reached, always returns the winning case
    * @returns {Promise<string>} The assigned case
    */
   async case() {
@@ -125,8 +146,22 @@ class Xperiment {
       return userData.case;
     }
 
-    // Assign a new case based on probabilities
-    const assignedCase = this._selectRandomCase();
+    // Check if convergence mode is enabled and threshold reached
+    let assignedCase;
+    if (this.convergenceThreshold !== undefined && this.convergenceThreshold > 0) {
+      const report = await Xperiment.report(this.name);
+      
+      // If effectiveness reached threshold, assign the winning case
+      if (report.effectiveness >= this.convergenceThreshold && report.bestCase) {
+        assignedCase = report.bestCase;
+      } else {
+        // Otherwise, assign randomly
+        assignedCase = this._selectRandomCase();
+      }
+    } else {
+      // No convergence mode, assign randomly
+      assignedCase = this._selectRandomCase();
+    }
     
     // Store case assignment (stats will be added as they happen)
     await db.set('experiments', this.name, this.id, 'case', assignedCase);
@@ -216,6 +251,7 @@ class Xperiment {
    */
   static async report(name = 'default') {
     const experimentData = await db.get('experiments', name);
+    const convergenceThreshold = await db.get('config', name, 'convergenceThreshold');
     
     if (!experimentData || typeof experimentData !== 'object') {
       return {
@@ -224,6 +260,8 @@ class Xperiment {
         cases: {},
         bestCase: null,
         effectiveness: 0,
+        convergenceThreshold: convergenceThreshold || null,
+        converged: false,
         message: 'No data available for this experiment'
       };
     }
@@ -283,15 +321,23 @@ class Xperiment {
 
     // Calculate effectiveness: simple formula based on minimum events
     // Need ~30 events per variant to be reasonably confident
-    const recommendedEvents = 30;
-    const effectiveness = minEvents === Infinity ? 0 : Math.min((minEvents / recommendedEvents) * 100, 100);
+    const effectiveness = minEvents === Infinity ? 0 : Math.min((minEvents / Xperiment.RECOMMENDED_EVENTS) * 100, 100);
+    const roundedEffectiveness = Math.round(effectiveness);
+    
+    // Check if converged (threshold reached)
+    const converged = convergenceThreshold !== undefined && 
+                      convergenceThreshold > 0 && 
+                      roundedEffectiveness >= convergenceThreshold &&
+                      bestCase !== null;
 
     return {
       experiment: name,
       totalUsers,
       cases: caseStats,
       bestCase,
-      effectiveness: Math.round(effectiveness)
+      effectiveness: roundedEffectiveness,
+      convergenceThreshold: convergenceThreshold || null,
+      converged
     };
   }
 }

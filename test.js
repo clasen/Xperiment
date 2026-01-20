@@ -401,6 +401,7 @@ describe('Xperiment - A/B Testing Library', function() {
       expect(report.totalUsers).to.equal(0);
       expect(report.cases).to.deep.equal({});
       expect(report.bestCase).to.be.null;
+      expect(report.effectiveness).to.equal(0);
     });
 
     it('should generate report with single user', async function() {
@@ -488,6 +489,149 @@ describe('Xperiment - A/B Testing Library', function() {
       
       expect(report.cases.plot1.successRate).to.equal(0);
       expect(report.cases.plot1.netScore).to.equal(0);
+    });
+  });
+
+  describe('Effectiveness Metric', function() {
+    it('should return 0% effectiveness with no events', async function() {
+      await Xperiment.define(['plot1', 'plot2'], 'no-events-test');
+      const exp = await Xperiment.get('user1', 'no-events-test');
+      await exp.case(); // Assign case but no hits/misses
+      
+      const report = await Xperiment.report('no-events-test');
+      expect(report.effectiveness).to.equal(0);
+    });
+
+    it('should return ~50% effectiveness with half recommended events', async function() {
+      await Xperiment.define(['plot1'], 'half-events-test');
+      const exp = await Xperiment.get('user1', 'half-events-test');
+      await exp.case();
+      const halfEvents = Xperiment.RECOMMENDED_EVENTS / 2;
+      const hits = Math.floor(halfEvents * 0.67);
+      const misses = halfEvents - hits; // Ensure exact total
+      await exp.hit(hits);
+      await exp.miss(misses);
+      
+      const report = await Xperiment.report('half-events-test');
+      // halfEvents / Xperiment.RECOMMENDED_EVENTS = 50%
+      expect(report.effectiveness).to.equal(50);
+    });
+
+    it('should return 100% effectiveness with recommended events or more', async function() {
+      await Xperiment.define(['plot1'], 'full-events-test');
+      const exp = await Xperiment.get('user1', 'full-events-test');
+      await exp.case();
+      const hits = Math.floor(Xperiment.RECOMMENDED_EVENTS * 0.67);
+      const misses = Xperiment.RECOMMENDED_EVENTS - hits; // Ensure exact total
+      await exp.hit(hits);
+      await exp.miss(misses);
+      
+      const report = await Xperiment.report('full-events-test');
+      // Xperiment.RECOMMENDED_EVENTS / Xperiment.RECOMMENDED_EVENTS = 100%
+      expect(report.effectiveness).to.equal(100);
+    });
+
+    it('should not exceed 100% effectiveness with more than recommended events', async function() {
+      await Xperiment.define(['plot1'], 'excess-events-test');
+      const exp = await Xperiment.get('user1', 'excess-events-test');
+      await exp.case();
+      const excessEvents = Xperiment.RECOMMENDED_EVENTS * 2.5;
+      await exp.hit(Math.floor(excessEvents * 0.625));
+      await exp.miss(Math.floor(excessEvents * 0.375));
+      
+      const report = await Xperiment.report('excess-events-test');
+      // More than Xperiment.RECOMMENDED_EVENTS, but capped at 100%
+      expect(report.effectiveness).to.equal(100);
+    });
+
+    it('should base effectiveness on minimum events across all cases', async function() {
+      await Xperiment.define(['plot1', 'plot2'], 'multi-case-test');
+      
+      // Plot1: More than recommended events (should give 100% individually)
+      const exp1 = await Xperiment.get('user1', 'multi-case-test');
+      await exp1.case();
+      
+      // Manually assign to ensure specific distribution
+      const db = new DeepBase({name: 'xperiment'});
+      await db.set('experiments', 'multi-case-test', 'user1', 'case', 'plot1');
+      const plot1Events = Math.floor(Xperiment.RECOMMENDED_EVENTS * 1.33);
+      await exp1.hit(Math.floor(plot1Events * 0.75));
+      await exp1.miss(Math.floor(plot1Events * 0.25));
+      
+      // Plot2: Only 1/3 of recommended events (should determine final effectiveness)
+      const exp2 = await Xperiment.get('user2', 'multi-case-test');
+      await exp2.case();
+      await db.set('experiments', 'multi-case-test', 'user2', 'case', 'plot2');
+      const plot2Events = Math.floor(Xperiment.RECOMMENDED_EVENTS / 3);
+      await exp2.hit(Math.floor(plot2Events * 0.7));
+      await exp2.miss(Math.floor(plot2Events * 0.3));
+      
+      const report = await Xperiment.report('multi-case-test');
+      // Effectiveness based on minimum (plot2Events / Xperiment.RECOMMENDED_EVENTS)
+      const expectedEffectiveness = Math.round((plot2Events / Xperiment.RECOMMENDED_EVENTS) * 100);
+      expect(report.effectiveness).to.equal(expectedEffectiveness);
+    });
+
+    it('should count score values in effectiveness calculation', async function() {
+      await Xperiment.define(['plot1'], 'score-effectiveness-test');
+      const exp = await Xperiment.get('user1', 'score-effectiveness-test');
+      await exp.case();
+      const hits = Math.floor(Xperiment.RECOMMENDED_EVENTS * 0.33);
+      const score = Math.floor(Xperiment.RECOMMENDED_EVENTS * 0.50);
+      const misses = Xperiment.RECOMMENDED_EVENTS - hits - score;
+      await exp.hit(hits);
+      await exp.score(score); // Score counts as hits
+      await exp.miss(misses);
+      
+      const report = await Xperiment.report('score-effectiveness-test');
+      // Total events: hits + score + misses = Xperiment.RECOMMENDED_EVENTS
+      expect(report.effectiveness).to.equal(100);
+    });
+
+    it('should handle effectiveness with only score (no hits/misses)', async function() {
+      await Xperiment.define(['plot1'], 'only-score-test');
+      const exp = await Xperiment.get('user1', 'only-score-test');
+      await exp.case();
+      await exp.score(Math.floor(Xperiment.RECOMMENDED_EVENTS * 1.5)); // 1.5x recommended, no misses
+      
+      const report = await Xperiment.report('only-score-test');
+      // score > Xperiment.RECOMMENDED_EVENTS, capped at 100%
+      expect(report.effectiveness).to.equal(100);
+    });
+
+    it('should calculate effectiveness correctly with decimal results', async function() {
+      await Xperiment.define(['plot1'], 'decimal-test');
+      const exp = await Xperiment.get('user1', 'decimal-test');
+      await exp.case();
+      const oneThirdEvents = Math.floor(Xperiment.RECOMMENDED_EVENTS / 3);
+      await exp.hit(Math.floor(oneThirdEvents * 0.7));
+      await exp.miss(Math.floor(oneThirdEvents * 0.3));
+      
+      const report = await Xperiment.report('decimal-test');
+      // oneThirdEvents / Xperiment.RECOMMENDED_EVENTS = ~33.33%, should round to 33
+      const expectedEffectiveness = Math.round((oneThirdEvents / Xperiment.RECOMMENDED_EVENTS) * 100);
+      expect(report.effectiveness).to.equal(expectedEffectiveness);
+    });
+
+    it('should return coherent effectiveness value between 0 and 100', async function() {
+      await Xperiment.define(['plot1', 'plot2'], 'coherence-test');
+      
+      // Create random number of events for different users
+      for (let i = 0; i < 10; i++) {
+        const exp = await Xperiment.get(`user${i}`, 'coherence-test');
+        await exp.case();
+        const hits = Math.floor(Math.random() * 20);
+        const misses = Math.floor(Math.random() * 10);
+        if (hits > 0) await exp.hit(hits);
+        if (misses > 0) await exp.miss(misses);
+      }
+      
+      const report = await Xperiment.report('coherence-test');
+      
+      // Effectiveness should always be between 0 and 100
+      expect(report.effectiveness).to.be.at.least(0);
+      expect(report.effectiveness).to.be.at.most(100);
+      expect(Number.isInteger(report.effectiveness)).to.be.true;
     });
   });
 
@@ -591,6 +735,228 @@ describe('Xperiment - A/B Testing Library', function() {
       await Xperiment.reset(experimentName);
       const afterReset = await Xperiment.report(experimentName);
       expect(afterReset.totalUsers).to.equal(0);
+    });
+  });
+
+  describe('Convergence Mode', function() {
+    it('should set convergenceThreshold in define()', async function() {
+      await Xperiment.define(['control', 'variant'], 'conv-test-1', {
+        convergenceThreshold: 80
+      });
+      
+      const db = new DeepBase({name: 'xperiment'});
+      const threshold = await db.get('config', 'conv-test-1', 'convergenceThreshold');
+      expect(threshold).to.equal(80);
+    });
+
+    it('should load convergenceThreshold from database', async function() {
+      await Xperiment.define(['a', 'b'], 'conv-test-2', {
+        convergenceThreshold: 75
+      });
+      
+      const exp = await Xperiment.get('user1', 'conv-test-2');
+      expect(exp.convergenceThreshold).to.equal(75);
+    });
+
+    it('should accept convergenceThreshold in get() method', async function() {
+      await Xperiment.define(['a', 'b'], 'conv-test-3');
+      
+      const exp = await Xperiment.get('user1', {
+        name: 'conv-test-3',
+        convergenceThreshold: 85
+      });
+      
+      expect(exp.convergenceThreshold).to.equal(85);
+    });
+
+    it('should accept convergenceThreshold in constructor', async function() {
+      const exp = new Xperiment('user1', {
+        name: 'conv-test-4',
+        cases: ['a', 'b'],
+        convergenceThreshold: 90
+      });
+      
+      expect(exp.convergenceThreshold).to.equal(90);
+    });
+
+    it('should include convergenceThreshold and converged in report', async function() {
+      await Xperiment.define(['control', 'variant'], 'conv-report-test', {
+        convergenceThreshold: 80
+      });
+      
+      const report = await Xperiment.report('conv-report-test');
+      
+      expect(report).to.have.property('convergenceThreshold');
+      expect(report).to.have.property('converged');
+      expect(report.convergenceThreshold).to.equal(80);
+      expect(report.converged).to.be.false; // No data yet
+    });
+
+    it('should return converged=false when effectiveness below threshold', async function() {
+      await Xperiment.define(['control', 'variant'], 'conv-below-test', {
+        convergenceThreshold: 80
+      });
+      
+      // Add some data but not enough to reach 80% effectiveness
+      const exp = await Xperiment.get('user1', 'conv-below-test');
+      await exp.case();
+      await exp.hit(10); // Only 10 events (need 30 for 100% effectiveness)
+      
+      const report = await Xperiment.report('conv-below-test');
+      
+      expect(report.effectiveness).to.be.lessThan(80);
+      expect(report.converged).to.be.false;
+    });
+
+    it('should return converged=true when effectiveness reaches threshold', async function() {
+      await Xperiment.define(['control', 'variant'], 'conv-reached-test', {
+        convergenceThreshold: 80
+      });
+      
+      // Add enough data to reach 80%+ effectiveness
+      const db = new DeepBase({name: 'xperiment'});
+      await db.set('experiments', 'conv-reached-test', 'user1', 'case', 'control');
+      await db.set('experiments', 'conv-reached-test', 'user1', 'hits', 20);
+      await db.set('experiments', 'conv-reached-test', 'user1', 'misses', 5);
+      
+      await db.set('experiments', 'conv-reached-test', 'user2', 'case', 'variant');
+      await db.set('experiments', 'conv-reached-test', 'user2', 'hits', 24);
+      await db.set('experiments', 'conv-reached-test', 'user2', 'misses', 1);
+      
+      const report = await Xperiment.report('conv-reached-test');
+      
+      // Both variants have 25 events total, 25/30 = 83% effectiveness
+      expect(report.effectiveness).to.be.at.least(80);
+      expect(report.converged).to.be.true;
+      expect(report.bestCase).to.be.oneOf(['control', 'variant']);
+    });
+
+    it('should assign winner when convergence threshold reached', async function() {
+      await Xperiment.define(['control', 'variant'], 'conv-winner-test', {
+        convergenceThreshold: 80
+      });
+      
+      const db = new DeepBase({name: 'xperiment'});
+      
+      // Manually create data with variant as clear winner
+      // Control: 25 events (15 hits, 10 misses) - 60% success rate
+      await db.set('experiments', 'conv-winner-test', 'user1', 'case', 'control');
+      await db.set('experiments', 'conv-winner-test', 'user1', 'hits', 15);
+      await db.set('experiments', 'conv-winner-test', 'user1', 'misses', 10);
+      
+      // Variant: 25 events (22 hits, 3 misses) - 88% success rate
+      await db.set('experiments', 'conv-winner-test', 'user2', 'case', 'variant');
+      await db.set('experiments', 'conv-winner-test', 'user2', 'hits', 22);
+      await db.set('experiments', 'conv-winner-test', 'user2', 'misses', 3);
+      
+      // Check report shows convergence
+      const report = await Xperiment.report('conv-winner-test');
+      expect(report.converged).to.be.true;
+      expect(report.bestCase).to.equal('variant');
+      
+      // New users should get the winner
+      const newExp1 = await Xperiment.get('new-user-1', 'conv-winner-test');
+      const case1 = await newExp1.case();
+      expect(case1).to.equal('variant');
+      
+      const newExp2 = await Xperiment.get('new-user-2', 'conv-winner-test');
+      const case2 = await newExp2.case();
+      expect(case2).to.equal('variant');
+      
+      const newExp3 = await Xperiment.get('new-user-3', 'conv-winner-test');
+      const case3 = await newExp3.case();
+      expect(case3).to.equal('variant');
+    });
+
+    it('should continue random assignment before reaching threshold', async function() {
+      await Xperiment.define(['control', 'variant'], 'conv-before-test', {
+        convergenceThreshold: 100 // Very high threshold
+      });
+      
+      // Add some data but not enough to reach 100% effectiveness
+      const exp1 = await Xperiment.get('user1', 'conv-before-test');
+      await exp1.case();
+      await exp1.hit(15);
+      
+      const report = await Xperiment.report('conv-before-test');
+      expect(report.converged).to.be.false;
+      
+      // New users should get random assignment
+      const assignments = new Set();
+      for (let i = 0; i < 20; i++) {
+        const exp = await Xperiment.get(`new-user-${i}`, 'conv-before-test');
+        const assigned = await exp.case();
+        assignments.add(assigned);
+      }
+      
+      // Should have both cases assigned (random distribution)
+      expect(assignments.size).to.equal(2);
+    });
+
+    it('should handle convergenceThreshold of 0 (no convergence)', async function() {
+      await Xperiment.define(['a', 'b'], 'no-conv-test', {
+        convergenceThreshold: 0
+      });
+      
+      // Even with 100% effectiveness, should not converge with threshold=0
+      const db = new DeepBase({name: 'xperiment'});
+      await db.set('experiments', 'no-conv-test', 'user1', 'case', 'a');
+      await db.set('experiments', 'no-conv-test', 'user1', 'hits', 30);
+      
+      const report = await Xperiment.report('no-conv-test');
+      expect(report.effectiveness).to.equal(100);
+      expect(report.converged).to.be.false; // threshold is 0, so no convergence
+      
+      // Should still assign randomly
+      const exp = await Xperiment.get('new-user', 'no-conv-test');
+      const assigned = await exp.case();
+      expect(assigned).to.be.oneOf(['a', 'b']);
+    });
+
+    it('should not converge without threshold set', async function() {
+      await Xperiment.define(['a', 'b'], 'no-threshold-test');
+      
+      // Add enough data for 100% effectiveness
+      const db = new DeepBase({name: 'xperiment'});
+      await db.set('experiments', 'no-threshold-test', 'user1', 'case', 'a');
+      await db.set('experiments', 'no-threshold-test', 'user1', 'hits', 30);
+      
+      const report = await Xperiment.report('no-threshold-test');
+      expect(report.effectiveness).to.equal(100);
+      expect(report.converged).to.be.false; // No threshold set
+      expect(report.convergenceThreshold).to.be.null;
+    });
+
+    it('should return null convergenceThreshold in report when not set', async function() {
+      await Xperiment.define(['a', 'b'], 'null-threshold-test');
+      
+      const report = await Xperiment.report('null-threshold-test');
+      
+      expect(report.convergenceThreshold).to.be.null;
+      expect(report.converged).to.be.false;
+    });
+
+    it('should work with score() method for convergence calculation', async function() {
+      await Xperiment.define(['control', 'variant'], 'conv-score-test', {
+        convergenceThreshold: 75
+      });
+      
+      const db = new DeepBase({name: 'xperiment'});
+      
+      // Use score instead of hits to reach threshold
+      await db.set('experiments', 'conv-score-test', 'user1', 'case', 'control');
+      await db.set('experiments', 'conv-score-test', 'user1', 'score', 20);
+      await db.set('experiments', 'conv-score-test', 'user1', 'misses', 5);
+      
+      await db.set('experiments', 'conv-score-test', 'user2', 'case', 'variant');
+      await db.set('experiments', 'conv-score-test', 'user2', 'score', 23);
+      await db.set('experiments', 'conv-score-test', 'user2', 'misses', 2);
+      
+      const report = await Xperiment.report('conv-score-test');
+      
+      // Both have 25 events (score counts as hits), 83% effectiveness
+      expect(report.effectiveness).to.be.at.least(75);
+      expect(report.converged).to.be.true;
     });
   });
 });
