@@ -1,11 +1,1 @@
-{
-    "config": {
-        "button-color-test": {
-            "cases": {
-                "red": 50,
-                "blue": 50
-            }
-        }
-    },
-    "experiments": {}
-}
+{}
