@@ -166,6 +166,33 @@ class Xperiment {
         return assignedCase;
     }
 
+    /**
+     * Manually assign a specific case to the user
+     * Allows manual override of automatic case assignment
+     * @param {string} caseName - The case to assign
+     * @returns {Promise<string>} The assigned case
+     * @throws {Error} If case name is not defined in experiment
+     */
+    async setCase(caseName) {
+        // Ensure cases are loaded
+        if (this.caseNames.length === 0) {
+            const loadedCases = await Xperiment.db.get(this.name, 'config', 'cases');
+            if (loadedCases) {
+                this._setCases(loadedCases);
+            }
+        }
+
+        // Validate that the case exists
+        if (!this.caseNames.includes(caseName)) {
+            throw new Error(`Case "${caseName}" is not defined for experiment "${this.name}". Available cases: ${this.caseNames.join(', ')}`);
+        }
+
+        // Store case assignment manually
+        await Xperiment.db.set(this.name, 'experiments', this.id, 'case', caseName);
+
+        return caseName;
+    }
+
     _selectRandomCase() {
         const options = this.caseNames;
 
