@@ -750,6 +750,24 @@ describe('Xperiment - A/B Testing Library', function () {
     });
 
     describe('Convergence Mode', function () {
+        it('should set convergenceThreshold with defineConvergenceThreshold() using default name', async function () {
+            await Xperiment.define(['control', 'variant']);
+            await Xperiment.defineConvergenceThreshold(82);
+
+            const db = new DeepBase({ name: 'xperiment' });
+            const threshold = await db.get('default', 'config', 'convergenceThreshold');
+            expect(threshold).to.equal(82);
+        });
+
+        it('should update cached instances when defineConvergenceThreshold() is called', async function () {
+            await Xperiment.define(['control', 'variant'], 'conv-sync-test');
+            const exp = await Xperiment.get('user1', 'conv-sync-test');
+            expect(exp.convergenceThreshold).to.equal(null);
+
+            await Xperiment.defineConvergenceThreshold(77, 'conv-sync-test');
+            expect(exp.convergenceThreshold).to.equal(77);
+        });
+
         it('should set convergenceThreshold in define()', async function () {
             await Xperiment.define(['control', 'variant'], 'conv-test-1', {
                 convergenceThreshold: 80

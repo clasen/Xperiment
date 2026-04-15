@@ -132,6 +132,28 @@ await Xperiment.define(['control', 'variant'], 'auto-optimize-test', {
 });
 ```
 
+### Static Method: defineConvergenceThreshold()
+
+Define only the convergence threshold for an existing experiment. Useful when an experiment is already running and you want to enable/adjust convergence mode without redefining cases.
+
+```javascript
+await Xperiment.defineConvergenceThreshold(convergenceThreshold, name = 'default')
+```
+
+**Parameters:**
+- `convergenceThreshold` (number) - Effectiveness % (0-100) to auto-select winner
+- `name` (string) - Experiment name (optional, defaults to `'default'`)
+
+**Example:**
+
+```javascript
+// Set threshold on default experiment
+await Xperiment.defineConvergenceThreshold(80);
+
+// Set threshold on a named experiment already in progress
+await Xperiment.defineConvergenceThreshold(85, 'checkout-redesign');
+```
+
 ### Constructor
 
 Create an experiment instance directly. Ideal for simple use cases.

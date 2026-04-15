@@ -27,7 +27,25 @@ class Xperiment {
         await Xperiment.db.set(name, 'config', 'cases', cases);
 
         if (options.convergenceThreshold !== undefined) {
-            await Xperiment.db.set(name, 'config', 'convergenceThreshold', options.convergenceThreshold);
+            await Xperiment.defineConvergenceThreshold(options.convergenceThreshold, name);
+        }
+    }
+
+    /**
+     * Define only the convergence threshold for an existing experiment
+     * @static
+     * @param {number} convergenceThreshold - Effectiveness % (0-100) to auto-select winner
+     * @param {string} [name='default'] - Experiment name (optional, defaults to 'default')
+     * @returns {Promise<void>}
+     */
+    static async defineConvergenceThreshold(convergenceThreshold, name = 'default') {
+        await Xperiment.db.set(name, 'config', 'convergenceThreshold', convergenceThreshold);
+
+        // Keep already-instantiated experiment objects in sync
+        for (const [key, instance] of Xperiment.instances) {
+            if (key.endsWith(`:${name}`)) {
+                instance.convergenceThreshold = convergenceThreshold;
+            }
         }
     }
 
