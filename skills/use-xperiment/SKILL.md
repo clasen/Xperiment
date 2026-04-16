@@ -98,6 +98,12 @@ await experiment.setCase('variant-b');
 
 **Note:** Once a user is assigned to a case, they stay in that case unless manually changed.
 
+If you need to clear only the assigned case (without deleting metrics), use:
+
+```javascript
+await Xperiment.resetCase('user-123', 'my-experiment');
+```
+
 ### 4. Recording Events
 
 Track user actions to measure experiment effectiveness:
@@ -178,6 +184,12 @@ await Xperiment.reset();
 ```
 
 **Warning:** This deletes all user assignments and tracking data for the experiment.
+
+To reset only one user's assigned case (and keep `hits`/`misses`/`score`), use:
+
+```javascript
+await Xperiment.resetCase('user-123', 'my-experiment');
+```
 
 ## Complete Example
 

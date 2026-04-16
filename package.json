@@ -1,6 +1,6 @@
 {
   "name": "xperiment",
-  "version": "1.1.6",
+  "version": "1.1.8",
   "description": "🧪 Xperiment - A/B testing, simplified",
   "type": "module",
   "main": "index.cjs",

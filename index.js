@@ -211,6 +211,18 @@ class Xperiment {
         return caseName;
     }
 
+    /**
+     * Clear only the assigned case for a specific user.
+     * Keeps user metrics (hits/misses/score) untouched.
+     * @static
+     * @param {string} id - User identifier
+     * @param {string} [name='default'] - Experiment name (optional, defaults to 'default')
+     * @returns {Promise<void>}
+     */
+    static async resetCase(id, name = 'default') {
+        await Xperiment.db.del(name, 'experiments', id, 'case');
+    }
+
     _selectRandomCase() {
         const options = this.caseNames;
 

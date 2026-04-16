@@ -345,6 +345,26 @@ await Xperiment.reset('homepage-test');
 await Xperiment.reset(); // Resets 'default' experiment
 ```
 
+### Static Method: resetCase()
+
+Reset (clear) only the assigned case for a specific user in an experiment.  
+This does **not** remove `hits`, `misses`, or `score`.
+
+```javascript
+await Xperiment.resetCase(id, name = 'default')
+```
+
+**Parameters:**
+- `id` (string) - User identifier
+- `name` (string) - Experiment name (optional, defaults to `'default'`)
+
+**Example:**
+
+```javascript
+await Xperiment.resetCase('user123', 'homepage-test');
+await Xperiment.resetCase('user456'); // Uses 'default' experiment
+```
+
 ### Static Method: report()
 
 Generate an effectiveness report for an experiment.

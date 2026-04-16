@@ -144,6 +144,23 @@ describe('Xperiment - A/B Testing Library', function () {
             expect(results.b).to.be.greaterThan(15);
             expect(results.c).to.be.greaterThan(15);
         });
+
+        it('should clear assigned case for a user with static method', async function () {
+            await Xperiment.define(['plot1', 'plot2'], 'clear-case-test');
+            const exp = await Xperiment.get('user1', 'clear-case-test');
+
+            const firstCase = await exp.case();
+            expect(firstCase).to.be.oneOf(['plot1', 'plot2']);
+
+            await Xperiment.resetCase('user1', 'clear-case-test');
+
+            const db = new DeepBase({ name: 'xperiment' });
+            const storedCase = await db.get('clear-case-test', 'experiments', 'user1', 'case');
+            expect(storedCase).to.satisfy(val => val === undefined || val === null);
+
+            const reassignedCase = await exp.case();
+            expect(reassignedCase).to.be.oneOf(['plot1', 'plot2']);
+        });
     });
 
     describe('Metrics Tracking', function () {
