@@ -1,6 +1,6 @@
 {
   "name": "xperiment",
-  "version": "1.1.8",
+  "version": "1.1.9",
   "description": "🧪 Xperiment - A/B testing, simplified",
   "type": "module",
   "main": "index.cjs",
@@ -38,10 +38,11 @@
   "author": "Martin Clasen",
   "license": "MIT",
   "dependencies": {
-    "deepbase": "^3.4.4"
+    "deepbase": "^3.8.1"
   },
   "devDependencies": {
-    "chai": "^4.3.0",
-    "mocha": "^10.0.0"
-  }
+    "chai": "^4.5.0",
+    "mocha": "^11.7.6"
+  },
+  "packageManager": "pnpm@11.15.1"
 }

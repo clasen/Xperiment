@@ -1,0 +1,10 @@
+minimumReleaseAgeExclude:
+  - diff@8.0.3
+  - serialize-javascript@7.0.3 || 7.0.5
+  - brace-expansion@2.0.3 || 2.1.2 || 5.0.8
+  - js-yaml@4.1.2 || 4.3.0
+overrides:
+  brace-expansion@<=5.0.7: ^5.0.8
+  diff@>=6.0.0 <8.0.3: ^8.0.3
+  serialize-javascript@<=7.0.2: ^7.0.3
+  serialize-javascript@>=5.0.0 <7.0.5: ^7.0.5
