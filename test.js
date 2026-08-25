@@ -1,14 +1,20 @@
 import { expect } from 'chai';
 import Xperiment from './index.js';
 import DeepBase from 'deepbase';
+import { resolve } from 'node:path';
+
+const databasePath = resolve(import.meta.dirname, 'db');
+const databaseOptions = { path: databasePath, name: 'xperiment' };
 
 describe('Xperiment - A/B Testing Library', function () {
     this.timeout(5000);
 
     // Clear database before each test for isolation
     beforeEach(async function () {
+        Xperiment.configure({ path: databasePath });
+
         // Clear all experiments
-        const db = new DeepBase({ name: 'xperiment' });
+        const db = new DeepBase(databaseOptions);
         await db.del();
 
         // Clear singleton instances
@@ -16,8 +22,24 @@ describe('Xperiment - A/B Testing Library', function () {
     });
 
     after(async function () {
-        const db = new DeepBase({ name: 'xperiment' });
+        const db = new DeepBase(databaseOptions);
         await db.del();
+    });
+
+    describe('Configuration', function () {
+        it('should require configuration before use', async function () {
+            const { default: UnconfiguredXperiment } = await import(`./index.js?unconfigured=${Date.now()}`);
+
+            expect(() => UnconfiguredXperiment.db)
+                .to.throw('Xperiment must be configured with Xperiment.configure({ path }) before use');
+        });
+
+        it('should require an absolute database path', function () {
+            expect(() => Xperiment.configure())
+                .to.throw('Xperiment.configure() requires an absolute "path" option');
+            expect(() => Xperiment.configure({ path: './db' }))
+                .to.throw('Xperiment.configure() requires an absolute "path" option');
+        });
     });
 
     describe('Constructor & Singleton Pattern', function () {
@@ -154,7 +176,7 @@ describe('Xperiment - A/B Testing Library', function () {
 
             await Xperiment.resetCase('user1', 'clear-case-test');
 
-            const db = new DeepBase({ name: 'xperiment' });
+            const db = new DeepBase(databaseOptions);
             const storedCase = await db.get('clear-case-test', 'experiments', 'user1', 'case');
             expect(storedCase).to.satisfy(val => val === undefined || val === null);
 
@@ -173,7 +195,7 @@ describe('Xperiment - A/B Testing Library', function () {
             await exp.hit();
             await exp.hit();
 
-            const db = new DeepBase({ name: 'xperiment' });
+            const db = new DeepBase(databaseOptions);
             const hits = await db.get('test', 'experiments', 'user1', 'hits');
             expect(hits).to.equal(3);
         });
@@ -186,7 +208,7 @@ describe('Xperiment - A/B Testing Library', function () {
             await exp.hit(5);
             await exp.hit(3);
 
-            const db = new DeepBase({ name: 'xperiment' });
+            const db = new DeepBase(databaseOptions);
             const hits = await db.get('test', 'experiments', 'user1', 'hits');
             expect(hits).to.equal(8);
         });
@@ -199,7 +221,7 @@ describe('Xperiment - A/B Testing Library', function () {
             await exp.miss();
             await exp.miss();
 
-            const db = new DeepBase({ name: 'xperiment' });
+            const db = new DeepBase(databaseOptions);
             const misses = await db.get('test', 'experiments', 'user1', 'misses');
             expect(misses).to.equal(2);
         });
@@ -211,7 +233,7 @@ describe('Xperiment - A/B Testing Library', function () {
 
             await exp.miss(10);
 
-            const db = new DeepBase({ name: 'xperiment' });
+            const db = new DeepBase(databaseOptions);
             const misses = await db.get('test', 'experiments', 'user1', 'misses');
             expect(misses).to.equal(10);
         });
@@ -225,7 +247,7 @@ describe('Xperiment - A/B Testing Library', function () {
             await exp.miss(2);
             await exp.hit(1);
 
-            const db = new DeepBase({ name: 'xperiment' });
+            const db = new DeepBase(databaseOptions);
             const hits = await db.get('test', 'experiments', 'user1', 'hits');
             const misses = await db.get('test', 'experiments', 'user1', 'misses');
 
@@ -242,7 +264,7 @@ describe('Xperiment - A/B Testing Library', function () {
 
             await exp.score(100);
 
-            const db = new DeepBase({ name: 'xperiment' });
+            const db = new DeepBase(databaseOptions);
             const score = await db.get('test', 'experiments', 'user1', 'score');
             expect(score).to.equal(100);
         });
@@ -256,7 +278,7 @@ describe('Xperiment - A/B Testing Library', function () {
             await exp.score(30);
             await exp.score(100);
 
-            const db = new DeepBase({ name: 'xperiment' });
+            const db = new DeepBase(databaseOptions);
             const score = await db.get('test', 'experiments', 'user1', 'score');
             expect(score).to.equal(100); // Should be the last value, not cumulative
         });
@@ -325,7 +347,7 @@ describe('Xperiment - A/B Testing Library', function () {
             await exp.hit(2);
             await exp.miss(5);
 
-            const db = new DeepBase({ name: 'xperiment' });
+            const db = new DeepBase(databaseOptions);
             const hits = await db.get('combined-test', 'experiments', 'user1', 'hits');
             const score = await db.get('combined-test', 'experiments', 'user1', 'score');
             const misses = await db.get('combined-test', 'experiments', 'user1', 'misses');
@@ -346,7 +368,7 @@ describe('Xperiment - A/B Testing Library', function () {
 
             await exp.score(); // No parameter
 
-            const db = new DeepBase({ name: 'xperiment' });
+            const db = new DeepBase(databaseOptions);
             const score = await db.get('default-test', 'experiments', 'user1', 'score');
             expect(score).to.equal(1);
         });
@@ -369,7 +391,7 @@ describe('Xperiment - A/B Testing Library', function () {
             await Xperiment.reset('test-experiment');
 
             // Verify all data is gone
-            const db = new DeepBase({ name: 'xperiment' });
+            const db = new DeepBase(databaseOptions);
             const data = await db.get('test-experiment', 'experiments');
 
             expect(data).to.satisfy(val => val === undefined || val === null);
@@ -389,7 +411,7 @@ describe('Xperiment - A/B Testing Library', function () {
 
             await Xperiment.reset('exp1');
 
-            const db = new DeepBase({ name: 'xperiment' });
+            const db = new DeepBase(databaseOptions);
             const data1 = await db.get('exp1', 'experiments');
             const data2 = await db.get('exp2', 'experiments');
 
@@ -574,7 +596,7 @@ describe('Xperiment - A/B Testing Library', function () {
 
         it('should base effectiveness on minimum users across all cases', async function () {
             await Xperiment.define(['plot1', 'plot2'], 'multi-case-test');
-            const db = new DeepBase({ name: 'xperiment' });
+            const db = new DeepBase(databaseOptions);
 
             // Plot1: More than recommended users (40 users)
             const plot1Users = Math.floor(Xperiment.RECOMMENDED_USERS * 1.33);
@@ -694,7 +716,7 @@ describe('Xperiment - A/B Testing Library', function () {
             await exp.hit(10);
             await exp.hit(-3); // This will actually decrement
 
-            const db = new DeepBase({ name: 'xperiment' });
+            const db = new DeepBase(databaseOptions);
             const hits = await db.get('neg-test', 'experiments', 'user1', 'hits');
             expect(hits).to.equal(7);
         });
@@ -721,7 +743,7 @@ describe('Xperiment - A/B Testing Library', function () {
                 exp.miss()
             ]);
 
-            const db = new DeepBase({ name: 'xperiment' });
+            const db = new DeepBase(databaseOptions);
             const hits = await db.get('concurrent-test', 'experiments', 'user1', 'hits');
             const misses = await db.get('concurrent-test', 'experiments', 'user1', 'misses');
 
@@ -771,7 +793,7 @@ describe('Xperiment - A/B Testing Library', function () {
             await Xperiment.define(['control', 'variant']);
             await Xperiment.defineConvergenceThreshold(82);
 
-            const db = new DeepBase({ name: 'xperiment' });
+            const db = new DeepBase(databaseOptions);
             const threshold = await db.get('default', 'config', 'convergenceThreshold');
             expect(threshold).to.equal(82);
         });
@@ -790,7 +812,7 @@ describe('Xperiment - A/B Testing Library', function () {
                 convergenceThreshold: 80
             });
 
-            const db = new DeepBase({ name: 'xperiment' });
+            const db = new DeepBase(databaseOptions);
             const threshold = await db.get('conv-test-1', 'config', 'convergenceThreshold');
             expect(threshold).to.equal(80);
         });
@@ -844,7 +866,7 @@ describe('Xperiment - A/B Testing Library', function () {
             });
 
             // Add some users but not enough to reach 80% effectiveness
-            const db = new DeepBase({ name: 'xperiment' });
+            const db = new DeepBase(databaseOptions);
             // Only 10 users in each case (need 24 for 80% effectiveness)
             for (let i = 0; i < 10; i++) {
                 await db.set('conv-below-test', 'experiments', `user_control_${i}`, 'case', 'control');
@@ -866,7 +888,7 @@ describe('Xperiment - A/B Testing Library', function () {
             });
 
             // Add enough users to reach 80%+ effectiveness (24 users = 80%)
-            const db = new DeepBase({ name: 'xperiment' });
+            const db = new DeepBase(databaseOptions);
             const usersNeeded = Math.ceil(Xperiment.RECOMMENDED_USERS * 0.8);
             
             for (let i = 0; i < usersNeeded; i++) {
@@ -892,7 +914,7 @@ describe('Xperiment - A/B Testing Library', function () {
                 convergenceThreshold: 80
             });
 
-            const db = new DeepBase({ name: 'xperiment' });
+            const db = new DeepBase(databaseOptions);
             const usersNeeded = Math.ceil(Xperiment.RECOMMENDED_USERS * 0.8);
 
             // Manually create data with variant as clear winner
@@ -960,7 +982,7 @@ describe('Xperiment - A/B Testing Library', function () {
             });
 
             // Even with 100% effectiveness, should not converge with threshold=0
-            const db = new DeepBase({ name: 'xperiment' });
+            const db = new DeepBase(databaseOptions);
             for (let i = 0; i < Xperiment.RECOMMENDED_USERS; i++) {
                 await db.set('no-conv-test', 'experiments', `user_a_${i}`, 'case', 'a');
                 await db.set('no-conv-test', 'experiments', `user_a_${i}`, 'hits', 5);
@@ -980,7 +1002,7 @@ describe('Xperiment - A/B Testing Library', function () {
             await Xperiment.define(['a', 'b'], 'no-threshold-test');
 
             // Add enough users for 100% effectiveness
-            const db = new DeepBase({ name: 'xperiment' });
+            const db = new DeepBase(databaseOptions);
             for (let i = 0; i < Xperiment.RECOMMENDED_USERS; i++) {
                 await db.set('no-threshold-test', 'experiments', `user_a_${i}`, 'case', 'a');
                 await db.set('no-threshold-test', 'experiments', `user_a_${i}`, 'hits', 5);
@@ -1006,7 +1028,7 @@ describe('Xperiment - A/B Testing Library', function () {
                 convergenceThreshold: 75
             });
 
-            const db = new DeepBase({ name: 'xperiment' });
+            const db = new DeepBase(databaseOptions);
             const usersNeeded = Math.ceil(Xperiment.RECOMMENDED_USERS * 0.75);
 
             // Use score with enough users to reach threshold
@@ -1026,4 +1048,3 @@ describe('Xperiment - A/B Testing Library', function () {
         });
     });
 });
-

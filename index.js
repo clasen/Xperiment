@@ -1,8 +1,25 @@
 import DeepBase from 'deepbase';
+import { isAbsolute } from 'node:path';
 
 class Xperiment {
-    // Database instance for persistence
-    static db = new DeepBase({ name: 'xperiment' });
+    static _db;
+
+    static configure({ path } = {}) {
+        if (typeof path !== 'string' || !isAbsolute(path)) {
+            throw new TypeError('Xperiment.configure() requires an absolute "path" option');
+        }
+
+        Xperiment._db = new DeepBase({ path, name: 'xperiment' });
+        Xperiment.instances.clear();
+    }
+
+    static get db() {
+        if (!Xperiment._db) {
+            throw new Error('Xperiment must be configured with Xperiment.configure({ path }) before use');
+        }
+
+        return Xperiment._db;
+    }
 
     // Recommended users per variant for statistical confidence
     static RECOMMENDED_USERS = 30;
@@ -401,4 +418,3 @@ class Xperiment {
 
 export default Xperiment;
 export { Xperiment };
-

@@ -6,6 +6,9 @@
  */
 
 import Xperiment from '../index.js';
+import { resolve } from 'node:path';
+
+Xperiment.configure({ path: resolve(import.meta.dirname, '..', 'db') });
 
 async function weightedTrackingExample() {
   console.log('=== Weighted Tracking Example ===\n');
@@ -81,4 +84,3 @@ async function weightedTrackingExample() {
 
 // Run the example
 weightedTrackingExample().catch(console.error);
-

@@ -1,4 +1,7 @@
 import Xperiment from '../index.js';
+import { resolve } from 'node:path';
+
+Xperiment.configure({ path: resolve(import.meta.dirname, '..', 'db') });
 
 console.log('🚀 Súper Simple - Un solo experimento\n');
 
@@ -25,4 +28,3 @@ console.log('   - Llamar a define()');
 console.log('   - Especificar un nombre de experimento');
 console.log('   - Usar await en el constructor');
 console.log('\n   ¡Solo crea y usa! 🎉');
-

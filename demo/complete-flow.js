@@ -6,6 +6,9 @@
  */
 
 import Xperiment from '../index.js';
+import { resolve } from 'node:path';
+
+Xperiment.configure({ path: resolve(import.meta.dirname, '..', 'db') });
 
 // Simulate a user journey through an e-commerce site
 async function simulateUserJourney(userId) {
@@ -133,4 +136,3 @@ async function completeFlowExample() {
 
 // Run the example
 completeFlowExample().catch(console.error);
-

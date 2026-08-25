@@ -5,6 +5,9 @@
  */
 
 import Xperiment from '../index.js';
+import { resolve } from 'node:path';
+
+Xperiment.configure({ path: resolve(import.meta.dirname, '..', 'db') });
 
 async function multivariantExample() {
   console.log('=== Multi-variant Test Example ===\n');
@@ -72,4 +75,3 @@ async function multivariantExample() {
 
 // Run the example
 multivariantExample().catch(console.error);
-

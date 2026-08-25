@@ -28,7 +28,20 @@ Comprehensive guide for using **Xperiment**, a powerful A/B testing library for 
 
 ## Instructions
 
-### 1. Defining an Experiment
+### 1. Configuring Storage
+
+Configure Xperiment once with an absolute database directory before using any other API:
+
+```javascript
+import Xperiment from 'xperiment';
+import { resolve } from 'node:path';
+
+Xperiment.configure({ path: resolve(import.meta.dirname, 'db') });
+```
+
+The `path` option is required. Anchor it to the application module with `import.meta.dirname`.
+
+### 2. Defining an Experiment
 
 Use `Xperiment.define()` to create and persist experiment configuration:
 
@@ -55,7 +68,7 @@ await Xperiment.define(
 - `name`: Experiment identifier (default: 'default')
 - `options.convergenceThreshold`: 0-100 effectiveness % to auto-select winner
 
-### 2. Getting an Experiment Instance
+### 3. Getting an Experiment Instance
 
 Use `Xperiment.get()` to retrieve or create a singleton instance for a user:
 
@@ -79,7 +92,7 @@ const experiment = await Xperiment.get('user-123', {
 
 **Best Practice:** Use `Xperiment.define()` first for cleaner code, then use `Xperiment.get()` with just user ID and name.
 
-### 3. Assigning and Checking Cases
+### 4. Assigning and Checking Cases
 
 ```javascript
 // Get assigned case (assigns if not already assigned)
@@ -104,7 +117,7 @@ If you need to clear only the assigned case (without deleting metrics), use:
 await Xperiment.resetCase('user-123', 'my-experiment');
 ```
 
-### 4. Recording Events
+### 5. Recording Events
 
 Track user actions to measure experiment effectiveness:
 
@@ -125,7 +138,7 @@ await experiment.score(8.5);
 - Success Rate = `totalHits / (totalHits + totalMisses)`
 - Net Score = `totalHits - totalMisses` (score values are added to hits)
 
-### 5. Generating Reports
+### 6. Generating Reports
 
 View experiment results and effectiveness:
 
@@ -149,7 +162,7 @@ console.log(report);
 
 **Effectiveness Formula:** `(minUsersPerCase / 30) * 100`, capped at 100%. Requires ~30 users per variant for statistical confidence.
 
-### 6. Convergence Mode
+### 7. Convergence Mode
 
 When convergence threshold is reached, new users are automatically assigned to the winning case:
 
@@ -171,7 +184,7 @@ const case = await experiment.case(); // Returns bestCase if converged
 - Maximizes positive outcomes while still testing
 - No manual intervention needed
 
-### 7. Resetting Experiments
+### 8. Resetting Experiments
 
 Clear all experiment data to start fresh:
 
@@ -195,6 +208,9 @@ await Xperiment.resetCase('user-123', 'my-experiment');
 
 ```javascript
 import Xperiment from 'xperiment';
+import { resolve } from 'node:path';
+
+Xperiment.configure({ path: resolve(import.meta.dirname, 'db') });
 
 // 1. Define experiment once (e.g., at app startup)
 await Xperiment.define(

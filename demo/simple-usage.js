@@ -1,4 +1,7 @@
 import Xperiment from '../index.js';
+import { resolve } from 'node:path';
+
+Xperiment.configure({ path: resolve(import.meta.dirname, '..', 'db') });
 
 console.log('🎯 Demo: Diferentes formas de uso\n');
 
@@ -72,4 +75,3 @@ console.log('\n📌 Recomendación:');
 console.log('   - Para un solo experimento simple: usa el constructor directo');
 console.log('   - Para múltiples usuarios: usa define() + get()');
 console.log('   - Para experimento por defecto: omite el nombre (usa "default")');
-

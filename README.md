@@ -45,6 +45,9 @@ node demo/convergence-mode.js
 
 ```javascript
 import Xperiment from 'xperiment';
+import { resolve } from 'node:path';
+
+Xperiment.configure({ path: resolve(import.meta.dirname, 'db') });
 
 // Create experiment directly with cases
 const exp = new Xperiment('user123', {
@@ -65,6 +68,9 @@ await exp.miss();
 
 ```javascript
 import Xperiment from 'xperiment';
+import { resolve } from 'node:path';
+
+Xperiment.configure({ path: resolve(import.meta.dirname, 'db') });
 
 // 1. Define experiment once (persists in database)
 await Xperiment.define(['variant_a', 'variant_b'], 'homepage-test');
@@ -97,6 +103,25 @@ const variant = await exp.case();
 ```
 
 ## API Reference
+
+### Static Method: configure()
+
+Configure the database directory before using any other Xperiment API. The path is required and must be absolute.
+
+```javascript
+Xperiment.configure({ path })
+```
+
+**Parameters:**
+- `path` (string) - Absolute directory where DeepBase stores `xperiment.json`
+
+**Example:**
+
+```javascript
+import { resolve } from 'node:path';
+
+Xperiment.configure({ path: resolve(import.meta.dirname, 'db') });
+```
 
 ### Static Method: define()
 
@@ -511,6 +536,9 @@ The recommended number of events is `30` per variant (exported as `RECOMMENDED_E
 
 ```javascript
 import Xperiment from 'xperiment';
+import { resolve } from 'node:path';
+
+Xperiment.configure({ path: resolve(import.meta.dirname, 'db') });
 
 // No need to define or name - just use it!
 const exp = new Xperiment('user_alice', {
@@ -538,6 +566,9 @@ if (userCompletesPurchase()) {
 
 ```javascript
 import Xperiment from 'xperiment';
+import { resolve } from 'node:path';
+
+Xperiment.configure({ path: resolve(import.meta.dirname, 'db') });
 
 // Define experiment once (persists in database)
 await Xperiment.define(['old_checkout', 'new_checkout'], 'checkout-flow');
@@ -694,4 +725,3 @@ MIT
 ## Contributing
 
 Contributions are welcome! Please feel free to submit issues or pull requests.
-

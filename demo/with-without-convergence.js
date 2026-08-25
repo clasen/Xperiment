@@ -1,4 +1,7 @@
 import Xperiment from '../index.js';
+import { resolve } from 'node:path';
+
+Xperiment.configure({ path: resolve(import.meta.dirname, '..', 'db') });
 
 /**
  * Demo: With vs Without Convergence
@@ -20,7 +23,10 @@ async function demo() {
   // NO convergenceThreshold - traditional A/B test
   
   // Build data
-  const db = await import('deepbase').then(m => new m.default({name: 'xperiment'}));
+  const db = await import('deepbase').then(m => new m.default({
+    path: resolve(import.meta.dirname, '..', 'db'),
+    name: 'xperiment'
+  }));
   await db.set('experiments', 'traditional-test', 'user1', 'case', 'control');
   await db.set('experiments', 'traditional-test', 'user1', 'hits', 15);
   await db.set('experiments', 'traditional-test', 'user1', 'misses', 10);

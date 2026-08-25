@@ -6,6 +6,9 @@
  */
 
 import Xperiment from '../index.js';
+import { resolve } from 'node:path';
+
+Xperiment.configure({ path: resolve(import.meta.dirname, '..', 'db') });
 
 console.log('🎯 Score Usage Demo - Engagement Time Tracking\n');
 
@@ -60,4 +63,3 @@ console.log(`   (Higher engagement time indicates better performance)\n`);
 // Clean up
 await Xperiment.reset('video-engagement');
 console.log('✅ Demo completed and data cleaned up');
-

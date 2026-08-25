@@ -1,4 +1,7 @@
 import Xperiment from '../index.js';
+import { resolve } from 'node:path';
+
+Xperiment.configure({ path: resolve(import.meta.dirname, '..', 'db') });
 
 console.log('🧪 Demo: Array cases with equal probability\n');
 
@@ -44,4 +47,3 @@ const assignedCase4 = await exp4.case();
 console.log(`\nCaso asignado inline a user999: ${assignedCase4}`);
 
 console.log('\n✨ Demo completado!');
-

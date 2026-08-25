@@ -5,6 +5,9 @@
  */
 
 import Xperiment from '../index.js';
+import { resolve } from 'node:path';
+
+Xperiment.configure({ path: resolve(import.meta.dirname, '..', 'db') });
 
 async function basicExample() {
   console.log('=== Basic A/B Test Example ===\n');
@@ -42,4 +45,3 @@ async function basicExample() {
 
 // Run the example
 basicExample().catch(console.error);
-

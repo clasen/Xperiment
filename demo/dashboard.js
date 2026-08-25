@@ -6,6 +6,9 @@
  */
 
 import Xperiment from '../index.js';
+import { resolve } from 'node:path';
+
+Xperiment.configure({ path: resolve(import.meta.dirname, '..', 'db') });
 
 // Helper function to create experiment data
 async function createExperimentData(name, variants, userCount, conversionRates) {
@@ -115,4 +118,3 @@ async function dashboardExample() {
 
 // Run the example
 dashboardExample().catch(console.error);
-

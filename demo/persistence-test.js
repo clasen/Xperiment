@@ -1,4 +1,7 @@
 import Xperiment from '../index.js';
+import { resolve } from 'node:path';
+
+Xperiment.configure({ path: resolve(import.meta.dirname, '..', 'db') });
 
 console.log('🧪 Demo: Persistencia en DB - Segunda ejecución\n');
 
@@ -38,4 +41,3 @@ try {
   console.error('❌ Error:', error.message);
   console.log('\n💡 Ejecuta primero: node demo/array-cases.js');
 }
-
