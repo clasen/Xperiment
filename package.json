@@ -38,7 +38,7 @@
   "author": "Martin Clasen",
   "license": "MIT",
   "dependencies": {
-    "deepbase": "^3.8.1"
+    "deepbase": "^3.9.0"
   },
   "devDependencies": {
     "chai": "^4.5.0",

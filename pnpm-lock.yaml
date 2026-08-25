@@ -15,8 +15,8 @@ importers:
   .:
     dependencies:
       deepbase:
-        specifier: ^3.8.1
-        version: 3.8.1
+        specifier: ^3.9.0
+        version: 3.9.0
     devDependencies:
       chai:
         specifier: ^4.5.0
@@ -61,8 +61,8 @@ packages:
     resolution: {integrity: sha512-BLrgEcRTwX2o6gGxGOCNyMvGSp35YofuYzw9h1IMTRmKqttAZZVU67bdb9Pr2vUHA8+j3i2tJfjO6C6+4myGTA==}
     engines: {node: 18 || 20 || >=22}
 
-  brace-expansion@5.0.8:
-    resolution: {integrity: sha512-JZyDyq3D4AUifKTPOB7DELf6XsB3WdPuNxCtob1vFXPsSXhdAiHBWJ/tJ8HAc9aH84BK+5JFZLNkJKx3G9kzQg==}
+  brace-expansion@5.0.9:
+    resolution: {integrity: sha512-ScQ4IuvIEF1TMlP7Zt+vjJ//9zlPb2SDcxWxM3bk8s6t6GGdJ7KO1dCcTidOPJKePW30LE/2cT7wCyPho9/Wxg==}
     engines: {node: 20 || >=22}
 
   browser-stdout@1.3.1:
@@ -119,13 +119,13 @@ packages:
     resolution: {integrity: sha512-SUwdGfqdKOwxCPeVYjwSyRpJ7Z+fhpwIAtmCUdZIWZ/YP5R9WAsyuSgpLVDi9bjWoN2LXHNss/dk3urXtdQxGg==}
     engines: {node: '>=6'}
 
-  deepbase-json@3.8.1:
-    resolution: {integrity: sha512-xLmt+Nubb+F/ZAT+GXJwvTKRvxlhKa54bcM8P7ST14YEs0UJ2gpB6zcu4bWLS18AeIa85XUDCgHquTuHOp3Nnw==}
+  deepbase-json@3.9.0:
+    resolution: {integrity: sha512-LdsoklymJ26QpHP7uzvyaPpLGLU0SN0tfxsWj1uRa7eACms0QC9Y5VBdHMDSaeNz24qYaikDEtWTm4vk3+YVIA==}
     peerDependencies:
-      deepbase: ^3.8.1
+      deepbase: ^3.9.0
 
-  deepbase@3.8.1:
-    resolution: {integrity: sha512-jyF+ayVWjC5gV7zwdxtLfgw2bOsj8AwMF3wTioJpk1UIeChrSKxvnaX7eRSPsTibD3FnDEOaA9STew08U+1E7A==}
+  deepbase@3.9.0:
+    resolution: {integrity: sha512-bMXTS4R0S6apyCnaiVLHjvlZnpxYBnnJi0Oh5CjN49MiqWD2beCba3FLfVG8v7j56ckYUxTQQO8EUMs3B/xxGQ==}
 
   diff@8.0.4:
     resolution: {integrity: sha512-DPi0FmjiSU5EvQV0++GFDOJ9ASQUVFh5kD+OzOnYdi7n3Wpm9hWWGfB/O2blfHcMVTL5WkQXSnRiK9makhrcnw==}
@@ -205,8 +205,8 @@ packages:
   jackspeak@3.4.3:
     resolution: {integrity: sha512-OGlZQpz2yfahA/Rd1Y8Cd9SIEsqvXkLVoSw/cgwhnhFMDbsQFeZYoJJ7bIZBS9BcamUW96asq/npPWugM+RQBw==}
 
-  js-yaml@4.3.0:
-    resolution: {integrity: sha512-1td788aAnnZ5qs7V2QIRl1owjtYpbKt749Y3xauqQgwIIGF/xXWz1wMTEBx5O3LK3lXLVuqXPdPxj2BoFHaW9Q==}
+  js-yaml@4.3.1:
+    resolution: {integrity: sha512-CY6crGq313MX8GkwvB7tzgp99vjQxY1++5y10/BKN/GUfHqWaOGQMNZkBvqSzsZKWk/ijwHlWzzkLulsGHhjWQ==}
     hasBin: true
 
   locate-path@6.0.0:
@@ -239,8 +239,8 @@ packages:
   ms@2.1.3:
     resolution: {integrity: sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==}
 
-  nanoid@5.1.6:
-    resolution: {integrity: sha512-c7+7RQ+dMB5dPwwCp4ee1/iV/q2P6aK1mTZcfr1BTuVlyW9hJYiMPybJCcnBlQtuSmTIWNeazm/zqNoZSSElBg==}
+  nanoid@5.1.16:
+    resolution: {integrity: sha512-kVrnsrJqMR8+oLJnGEmSWw9BivK5mt7H3FZatVRjrc5wGqFYuBxX1yG7+A7Gi5AefkX6t/oCkizcQgpu0cY1dQ==}
     engines: {node: ^18 || >=20}
     hasBin: true
 
@@ -408,7 +408,7 @@ snapshots:
 
   balanced-match@4.0.4: {}
 
-  brace-expansion@5.0.8:
+  brace-expansion@5.0.9:
     dependencies:
       balanced-match: 4.0.4
 
@@ -469,16 +469,16 @@ snapshots:
     dependencies:
       type-detect: 4.1.0
 
-  deepbase-json@3.8.1(deepbase@3.8.1):
+  deepbase-json@3.9.0(deepbase@3.9.0):
     dependencies:
-      deepbase: 3.8.1
+      deepbase: 3.9.0
       proper-lockfile: 4.1.2
       steno: 0.4.4
 
-  deepbase@3.8.1:
+  deepbase@3.9.0:
     dependencies:
-      deepbase-json: 3.8.1(deepbase@3.8.1)
-      nanoid: 5.1.6
+      deepbase-json: 3.9.0(deepbase@3.9.0)
+      nanoid: 5.1.16
 
   diff@8.0.4: {}
 
@@ -539,7 +539,7 @@ snapshots:
     optionalDependencies:
       '@pkgjs/parseargs': 0.11.0
 
-  js-yaml@4.3.0:
+  js-yaml@4.3.1:
     dependencies:
       argparse: 2.0.1
 
@@ -560,7 +560,7 @@ snapshots:
 
   minimatch@9.0.9:
     dependencies:
-      brace-expansion: 5.0.8
+      brace-expansion: 5.0.9
 
   minipass@7.1.3: {}
 
@@ -575,7 +575,7 @@ snapshots:
       glob: 10.5.0
       he: 1.2.0
       is-path-inside: 3.0.3
-      js-yaml: 4.3.0
+      js-yaml: 4.3.1
       log-symbols: 4.1.0
       minimatch: 9.0.9
       ms: 2.1.3
@@ -590,7 +590,7 @@ snapshots:
 
   ms@2.1.3: {}
 
-  nanoid@5.1.6: {}
+  nanoid@5.1.16: {}
 
   p-limit@3.1.0:
     dependencies:

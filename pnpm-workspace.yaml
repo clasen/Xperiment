@@ -1,8 +1,11 @@
 minimumReleaseAgeExclude:
   - diff@8.0.3
   - serialize-javascript@7.0.3 || 7.0.5
-  - brace-expansion@2.0.3 || 2.1.2 || 5.0.8
-  - js-yaml@4.1.2 || 4.3.0
+  - brace-expansion@2.0.3 || 2.1.2 || 5.0.8 || 5.0.9
+  - js-yaml@4.1.2 || 4.3.0 || 4.3.1
+  - deepbase-json@3.9.0
+  - deepbase@3.9.0
+  - nanoid@5.1.16
 overrides:
   brace-expansion@<=5.0.7: ^5.0.8
   diff@>=6.0.0 <8.0.3: ^8.0.3
